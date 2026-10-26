@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feriados 2026</title>
+<style>
+  body {
+    max-width: 560px;
+    margin: 32px auto;
+    padding: 0 16px;
+    font-family: Arial, sans-serif;
+    color: #333;
+  }
+  h1 { color: #d6336c; }
+  input { width: 90px; padding: 6px; }
+  button {
+    padding: 6px 14px;
+    color: #fff;
+    background: #d6336c;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover { background: #a61e4d; }
+  #erro { color: #c92a2a; font-weight: bold; }
+  table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+  th { background: #d6336c; color: #fff; text-align: left; padding: 8px; }
+  td { padding: 8px; border-bottom: 1px solid #f3c9da; }
+  tr.fim-de-semana td { background: #fff3bf; }
+</style>
+</head>
+<body>
+  <h1>Feriados 2026</h1>
+
+  <label for="ano">Ano:</label>
+  <input type="number" id="ano">
+  <button id="consultar">Consultar</button>
+
+  <p id="erro"></p>
+  <p id="total"></p>
+
+  <table id="tabela" hidden>
+    <thead>
+      <tr><th>Data</th><th>Dia da semana</th><th>Feriado</th></tr>
+    </thead>
+    <tbody id="corpo"></tbody>
+  </table>
+
+<script>
+  const campoAno = document.getElementById("ano");
+  const erro = document.getElementById("erro");
+  const total = document.getElementById("total");
+  const tabela = document.getElementById("tabela");
+  const corpo = document.getElementById("corpo");
+
+  // Campo já preenchido com o ano atual
+  campoAno.value = new Date().getFullYear();
+
+  function consultar() {
+    const ano = campoAno.value;
+
+    fetch("https://brasilapi.com.br/api/feriados/v1/" + ano)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Ano inválido");
+        }
+        return response.json();
+      })
+      .then((feriados) => {
+        erro.textContent = "";
+        corpo.innerHTML = "";
+
+        total.textContent = "Total de feriados: " + feriados.length;
+
+        feriados.forEach((feriado) => {
+          const data = new Date(feriado.date + "T12:00:00");
+          const [a, m, d] = feriado.date.split("-");
+          const dia = data.toLocaleDateString("pt-BR", { weekday: "long" });
+
+          const linha = document.createElement("tr");
+          if (data.getDay() === 0 || data.getDay() === 6) {
+            linha.className = "fim-de-semana";
+          }
+          linha.innerHTML =
+            "<td>" + d + "/" + m + "/" + a + "</td>" +
+            "<td>" + dia + "</td>" +
+            "<td>" + feriado.name + "</td>";
+          corpo.appendChild(linha);
+        });
+
+        tabela.hidden = false;
+      })
+      .catch(() => {
+        total.textContent = "";
+        tabela.hidden = true;
+        erro.textContent = "Ano inválido ou erro ao buscar os feriados. Tente outro ano.";
+      });
+  }
+
+  document.getElementById("consultar").addEventListener("click", consultar);
+  consultar();
+</script>
+</body>
+</html>
